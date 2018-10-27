@@ -2,6 +2,6 @@ DROP TABLE IF EXISTS comment;
 CREATE TABLE comment (
   id VARCHAR(32) PRIMARY KEY,
   content TEXT NOT NULL,
-  pid VARCHAR(32),
-  tid VARCHAR(32) 
+  pid VARCHAR(32) NOT NULL,
+  tid VARCHAR(32) NOT NULL
 );

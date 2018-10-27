@@ -59,6 +59,44 @@ func createCommentHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	if com.PID == "" && com.TID == "" { // consider it a new topic
+		// create a TID
+		createdAt = time.Now().UTC()
+		tid, err := ksuid.NewRandomWithTime(createdAt)
+		if err != nil {
+			util.ResponseError(w, http.StatusInternalServerError, "Failed to create ID")
+			return
+		}
+		com.PID = tid.String()
+		com.TID = com.PID
+	}
+
+	if com.TID != "" && com.PID == "" { // use tid as pid
+		com.PID = com.TID
+	}
+
+	if com.PID != "" && com.TID == "" {
+		comment := schema.Comment{
+			ID:      com.PID,
+			Content: "",
+			PID:     "",
+			TID:     "",
+		}
+
+		comments, err := db.GetComment(ctx, comment)
+		if err != nil {
+			log.Println(err)
+			util.ResponseError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if len(comments) < 1 {
+			com.TID = comments[0].TID
+		} else {
+			util.ResponseError(w, http.StatusNotAcceptable, "Topic id is not specified, if its a new topic, do not specify the parent id either.")
+		}
+
+	}
+
 	comment := schema.Comment{
 		ID:      id.String(),
 		Content: com.Content,
@@ -72,5 +110,5 @@ func createCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	util.ResponseOk(w, comment.ID)
+	util.ResponseOk(w, comment)
 }
